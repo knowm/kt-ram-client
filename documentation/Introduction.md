@@ -78,7 +78,7 @@ Unit crossbars are accessed by specifying the following:
 |:--------:|:-----------:|:-------------------:|
 |Module ID | The main board slot where the Array Module is inserted. | 0 through 5 |
 |Unit ID | The unit on each Array Module| 0 or 1|
-|Array ID | The array on each unit| 1 to 16, depending on Array Module variant|
+|Array ID | The array on each unit| 0 to 15, depending on Array Module variant|
 |Column|The column of the specified array|0 through 32, depending on array variant|
 |Row|The row of the specified array|0 through 32, depending on array variant|
 
@@ -103,16 +103,16 @@ In addition to array permission, each array is protected with usage limits that 
 |:--------:|:-----------:|:-------------------:|
 |positive voltage|positive polarity pulse amplitude.| .75V|
 |negative voltage|negative polarity pulse amplitude.| -1.0V|
-|series resistance|programmable circuit series resistance.| 20kΩ|
+|series resistance|programmable circuit series resistance.| 15kΩ|
 
 
 Both user array access permission and usage limits are associated with the specific array module, which identifies itself to the kTPIServer. If an array module is moved to another port on the main board, the permissions and usage limits will follow the module to the new port *but you will have to use a new port ID to access it*. For example, lets say that you are granted access to an array on module id (port) 3. At a later time, this module is removed from the board and inserted into port 2 and the system rebooted. You will now have the same permissions to the module, but they will be access by specification of module ID 2 instead of 3. 
 
 
-# HTTP & Java API
+# HTTP & Java Client
 
 
-The kTPiServer handles HTTP requests and returns JSON data. The intended use is via an HTTP Client in the users preferred programming language. Due to the fact that Alex's primary language is Java, an HTTP Java Client has been provided that simplifies the interaction with the server http end-points. Please refer to the API Documentation for a description of the available endpoints.  
+The kTPiServer handles HTTPS requests and returns JSON data. The intended use is via an HTTP Client in the users preferred programming language. Due to the fact that Alex's primary language is Java, this HTTP Java Client has been provided to simplify the interaction with the server http end-points.  Please refer to the [EndPoints.md](documentation/EndPoints.md) file for a description of the available endpoints.  
 
 
 
