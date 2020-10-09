@@ -6,7 +6,7 @@
 
 ## Introduction
 
-The kT-RAM Raspberry Pi Server ("kTPiSever" or "kTPI" for brevity) is a stand-alone server for memristor algorithm research and development. Its purpose is to provide an intermediate level platform to explore memristor in-memory algorithms ahead of dedicated chip development. It was designed to be extensible and to support a rapid iterative design-test cycles. Its primary purpose is to help mitigate the "memristor chip simulation problem" as it relates to the fabrication of novel mixed memristor-CMOS chips. Accurate circuit simulation is essential for chip design and it is the cornerstone of modern chip design. Memristors, however, are highly complex devices with complex history-dependent behavior and there are few, if any, memristor models that capture the complexity while simultaneously allowing for efficient large-scale simulations capable of demonstrating [primary performance benchmarks](https://knowm.org/primary-and-secondary-performance-metrics/). Through a "unit crossbar" approach, the kT-RAM Server is able to provide access to thousands of memristors, sufficient for the exploration and demonstration of small scale machine learning algorithms. The kTPiServer is not intended for application development, but rather as (1) a step toward fully integrated memristor-CMOS synaptic processors and (2) as a learning resource for professors in a post-COVID-19 society, where access to labs may be difficult. As a server, programs can be written and executed from any location with Internet access. In addition, the server can be administered remotely as well, allowing both student and teachers to design and test memristor algorithms from the comfort and safety of their own homes.  
+The kT-RAM Raspberry Pi Server ("kTPiSever" or "kTPI" for brevity) is a server for memristor algorithm research and development. It was designed to be extensible and to support a rapid iterative design-test cycles. Through a "unit crossbar" approach, the kT-RAM Server is able to provide access to thousands of memristors, sufficient for the exploration and demonstration of small scale machine learning algorithms. The kTPiServer is not intended for application development, but rather as (1) a step toward fully integrated memristor-CMOS synaptic processors and (2) as a learning resource for professors and students in a post-COVID-19 society, where access to labs may be difficult. As a server, programs can be written and executed from any location with Internet access. In addition, the server can be administered remotely, allowing both student and teachers to design and test memristor algorithms from the comfort and safety of their own homes. Multipl kTPiServers are in use to support the knowm.ai memristor array web-service.  
 
 ## System Architecture Overview
 
@@ -30,10 +30,10 @@ A unit crossbar, or more generally a "unit array", is a memristor array that exp
 There are two major planned versions of drivers. The first generation (V1.x) is unitary access while the second generation (V2.x) enables both unitary and differential access. In both versions there are essentially only three main operations:
 
 1. One or more unit crossbars are selected, coupling the desired memristor to the drive terminals.
-1. A "write" pulse is generated, potentiall causing modification of the selected memristors.
-1. A "read" pulse is generated, causuing the sense circuitry to sense the voltage across the programmable series resistor and, via prior calibration, return the resistance, conductance, current, sense voltage etc. 
+1. A "write" pulse is generated, potentially causing modification of the selected memristors.
+1. A "read" pulse is generated, causuing the sense circuitry to sense the voltage across the programmable series resistor and, via prior calibration, return the resistance, conductance, current, or sense voltage. 
 
-Through selective coupling and driving of memristors in this fashion, it is possible to implement memory, logic and machine learning functions. 
+Through selective coupling and driving of memristors in this fashion, it is possible to implement memory, logic and machine learning functions.  
 
 ## Java Client
 
