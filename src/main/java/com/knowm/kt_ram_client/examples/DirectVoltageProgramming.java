@@ -19,24 +19,26 @@ public class DirectVoltageProgramming extends HostInfo {
 	public static void main(String[] args) {
 
 		try {
-			KTRAMServerClient.initClientPool(1, username, password);
-			getCurve(0, 0, 0, 2, 3);
-			KTRAMServerClient.shutdownClient();
+			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
+
+			getCurve(client, 0, 0, 0, 3, 7);
+
+			client.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public static void getCurve(int module, int unit, int array, int column, int row) {
+	public static void getCurve(KTRAMServerClient client, int module, int unit, int array, int column, int row) {
 
 		// select the device
-		KTRAMServerClient.clear(host);
-		KTRAMServerClient.set(module, unit, array, column, row, host);
+		client.clear();
+		client.set(module, unit, array, column, row);
 
-		double[] programmingVoltages = new double[30];//
+		double[] programmingVoltages = new double[50];//
 		for (int i = 0; i < programmingVoltages.length; i++) {
-			programmingVoltages[i] = .1 + .02 * i;
+			programmingVoltages[i] = .2 + .01 * i;
 		}
 
 		XYChart chart = new XYChartBuilder()
@@ -52,18 +54,18 @@ public class DirectVoltageProgramming extends HostInfo {
 			double v = programmingVoltages[i];
 
 			// erase
-			KTRAMServerClient.pulseWrite(-.75f, 500, 20_000, 5, host);
+			client.pulseWrite(-.75f, 500, 20_000, 5);
 
 			// read initial resistance
-			float[] read = KTRAMServerClient.pulseRead(.2f, 500, 50_000, 30, 5, ReadFormat.RESISTANCE, host);
+			float[] read = client.pulseRead(.15f, 500, 50_000, 30, 5, ReadFormat.RESISTANCE);
 			AveMaxMinVar stats = new AveMaxMinVar(read);
 			y_init[i] = stats.getAve();
 
 			// write pulses with high series resistance
-			KTRAMServerClient.pulseWrite((float) v, 500, 50_000, 5, host);
+			client.pulseWrite((float) v, 500, 50_000, 10);
 
 			// read
-			read = KTRAMServerClient.pulseRead(.2f, 500, 50_000, 30, 5, ReadFormat.RESISTANCE, host);
+			read = client.pulseRead(.15f, 500, 50_000, 30, 5, ReadFormat.RESISTANCE);
 			stats = new AveMaxMinVar(read);
 			y[i] = stats.getAve();
 
@@ -72,7 +74,7 @@ public class DirectVoltageProgramming extends HostInfo {
 
 		}
 
-		KTRAMServerClient.clear(host);
+		client.clear();
 
 		XYSeries series = chart.addSeries("Programmed Resistance", programmingVoltages, y);
 		series.setMarker(SeriesMarkers.NONE);

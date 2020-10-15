@@ -17,14 +17,12 @@ public class CalibrationExamples extends HostInfo {
 	public static void main(String[] args) {
 
 		try {
-			KTRAMServerClient.initClientPool(1, username, password);
+			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
 
-			CalibrationExamples calibrationExamples = new CalibrationExamples();
+			viewProfile(client);
+			// viewAllProfiles(client);
 
-			calibrationExamples.viewProfile();
-			calibrationExamples.viewAllProfiles();
-
-			KTRAMServerClient.shutdownClient();
+			client.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -37,9 +35,9 @@ public class CalibrationExamples extends HostInfo {
 	 * width, seriesResistance, senseGain} that have previously been calibration by
 	 * the system admin.
 	 */
-	public void viewAllProfiles() {
+	public static void viewAllProfiles(KTRAMServerClient client) {
 
-		List<CalibrationProfile> profiles = KTRAMServerClient.getAllCalibrationProfiles(host);
+		List<CalibrationProfile> profiles = client.getAllCalibrationProfiles();
 
 		System.out.println("Retrieved " + profiles.size() + " calibration profiles.");
 
@@ -74,21 +72,21 @@ public class CalibrationExamples extends HostInfo {
 	 * Retrieves a single calibration profile.
 	 * 
 	 */
-	public void viewProfile() {
+	public static void viewProfile(KTRAMServerClient client) {
 
 		float amplitude = .15f;
 		float width = 500;
-		float seriesResistance = 40000;
+		float seriesResistance = 50000;
 		float senseGain = 30;
 
-		CalibrationProfile calibrationProfile = KTRAMServerClient.getCalibrationProfile(host, amplitude, width,
-				seriesResistance, senseGain);
+		CalibrationProfile calibrationProfile = client.getCalibrationProfile(amplitude, width, seriesResistance,
+				senseGain);
 
 		plotCalibrationProfile(calibrationProfile);
 
 	}
 
-	public void plotCalibrationProfile(CalibrationProfile calibrationProfile) {
+	public static void plotCalibrationProfile(CalibrationProfile calibrationProfile) {
 
 		XYChart chart = new XYChartBuilder().width(800).height(600).title("Calibration Profile").xAxisTitle("Voltage")
 				.yAxisTitle("Resistance").build();

@@ -27,8 +27,19 @@ import com.knowm.kt_ram_client.utils.SSLUtils;
 
 public class KTRAMServerClient {
 
-	private static Client[] clients;
-	private static int z = 0;
+	private String host;
+
+	private Client[] clients;
+	private int z = 0;
+
+	public KTRAMServerClient(String host, String username, String password)
+			throws KeyManagementException, NoSuchAlgorithmException {
+
+		this.host = host;
+
+		initClientPool(1, host, username, password);
+
+	}
 
 	/**
 	 * Initializes the client with the specified number of clients in the client
@@ -38,24 +49,41 @@ public class KTRAMServerClient {
 	 * @throws NoSuchAlgorithmException
 	 * @throws KeyManagementException
 	 */
-	public static void initClientPool(int numClientsInPool, String username, String password)
+	public void initClientPool(int numClientsInPool, String host, String username, String password)
 			throws NoSuchAlgorithmException, KeyManagementException {
 
-		SSLContext ctx = SSLUtils.bypassSignedCertificate();
-		// SSLContext ctx = SSLUtils.loadKnowmCert();
+		if (host.contains("https")) {
+			SSLContext ctx;
 
-		clients = new Client[numClientsInPool];
-		HttpAuthenticationFeature auth = HttpAuthenticationFeature.basic(username, password);
+			if (host.contains("knowm.ai")) {
+				ctx = SSLUtils.loadKnowmCert();
+			} else {
+				ctx = SSLUtils.bypassSignedCertificate();
+			}
 
-		for (int i = 0; i < clients.length; i++) {
-			clients[i] = ClientBuilder.newBuilder().register(JacksonJsonProvider.class).register(MultiPartFeature.class)
-					.register(auth).sslContext(ctx).build();
+			clients = new Client[numClientsInPool];
+			HttpAuthenticationFeature auth = HttpAuthenticationFeature.basic(username, password);
 
+			for (int i = 0; i < clients.length; i++) {
+				clients[i] = ClientBuilder.newBuilder().register(JacksonJsonProvider.class)
+						.register(MultiPartFeature.class).register(auth).sslContext(ctx).build();
+
+			}
+		} else {
+			clients = new Client[numClientsInPool];
+			HttpAuthenticationFeature auth = HttpAuthenticationFeature.basic(username, password);
+
+			for (int i = 0; i < clients.length; i++) {
+				clients[i] = ClientBuilder.newBuilder().register(JacksonJsonProvider.class)
+						.register(MultiPartFeature.class).register(auth).build();
+
+			}
 		}
+
 	}
 
 	/** shuts down all the clients in the client pool. */
-	public static void shutdownClient() {
+	public void shutdown() {
 
 		for (int i = 0; i < clients.length; i++) {
 			clients[i].close();
@@ -67,12 +95,12 @@ public class KTRAMServerClient {
 	 *
 	 * @return
 	 */
-	public static synchronized Client getClient() {
+	public synchronized Client getClient() {
 
 		return clients[z++ % clients.length];
 	}
 
-	public static ProductInfo getBoardInfo(String host) {
+	public ProductInfo getBoardInfo() {
 
 		String path = "get-board-info/";
 
@@ -86,7 +114,7 @@ public class KTRAMServerClient {
 
 	}
 
-	public static ProductInfo getModuleInfo(int moduleID, String host) {
+	public ProductInfo getModuleInfo(int moduleID) {
 
 		String path = "get-module-info/" + moduleID;
 
@@ -103,7 +131,7 @@ public class KTRAMServerClient {
 
 	}
 
-	public static ProductInfo getDriverInfo(String host) {
+	public ProductInfo getDriverInfo() {
 
 		String path = "get-driver-info/";
 
@@ -116,7 +144,7 @@ public class KTRAMServerClient {
 		return response.readEntity(ProductInfo.class);
 	}
 
-	public static List<CalibrationProfile> getAllCalibrationProfiles(String host) {
+	public List<CalibrationProfile> getAllCalibrationProfiles() {
 
 		String path = "get-all-calibration-profiles/";
 
@@ -131,8 +159,8 @@ public class KTRAMServerClient {
 
 	}
 
-	public static CalibrationProfile getCalibrationProfile(String host, float amplitude, float width,
-			float seriesResistance, float senseGain) {
+	public CalibrationProfile getCalibrationProfile(float amplitude, float width, float seriesResistance,
+			float senseGain) {
 
 		String path = "get-calibration-profile/" + amplitude + "/" + width + "/" + seriesResistance + "/" + senseGain;
 
@@ -143,7 +171,7 @@ public class KTRAMServerClient {
 
 	}
 
-	public static boolean pulseWrite(float amplitude, float width, float seriesResistance, int numPulses, String host) {
+	public boolean pulseWrite(float amplitude, float width, float seriesResistance, int numPulses) {
 
 		String path = "pulse-write/" + amplitude + "/" + width + "/" + seriesResistance + "/" + numPulses;
 
@@ -153,8 +181,8 @@ public class KTRAMServerClient {
 		return response.readEntity(Boolean.class);
 	}
 
-	public static boolean pulseWriteActivations(float amplitude, float width, float seriesResistance, int numPulses,
-			List<Activation> activations, boolean isPattern, String host) {
+	public boolean pulseWriteActivations(float amplitude, float width, float seriesResistance, int numPulses,
+			List<Activation> activations, boolean isPattern) {
 
 		String path = "pulse-write-activations/" + amplitude + "/" + width + "/" + seriesResistance + "/" + numPulses
 				+ "/" + isPattern;
@@ -166,8 +194,8 @@ public class KTRAMServerClient {
 		}
 	}
 
-	public static float[] pulseRead(float amplitude, float width, float seriesResistance, float senseGain,
-			int numPulses, ReadFormat readFormat, String host) {
+	public float[] pulseRead(float amplitude, float width, float seriesResistance, float senseGain, int numPulses,
+			ReadFormat readFormat) {
 
 		String path = "pulse-read/" + amplitude + "/" + width + "/" + seriesResistance + "/" + senseGain + "/"
 				+ numPulses + "/" + readFormat;
@@ -178,9 +206,8 @@ public class KTRAMServerClient {
 		return response.readEntity(float[].class);
 	}
 
-	public static List<float[]> pulseReadActivations(float amplitude, float width, float seriesResistance,
-			float senseGain, int numPulses, ReadFormat readFormat, List<Activation> activations, boolean isPattern,
-			String host) {
+	public List<float[]> pulseReadActivations(float amplitude, float width, float seriesResistance, float senseGain,
+			int numPulses, ReadFormat readFormat, List<Activation> activations, boolean isPattern) {
 
 		String path = "pulse-read-activations/" + amplitude + "/" + width + "/" + seriesResistance + "/" + senseGain
 				+ "/" + numPulses + "/" + readFormat + "/" + isPattern;
@@ -193,7 +220,7 @@ public class KTRAMServerClient {
 		}
 	}
 
-	public static boolean set(int module, int unit, int array, int column, int row, String host) {
+	public boolean set(int module, int unit, int array, int column, int row) {
 
 		String path = "set/" + module + "/" + unit + "/" + array + "/" + column + "/" + row;
 
@@ -203,7 +230,7 @@ public class KTRAMServerClient {
 		return response.readEntity(Boolean.class);
 	}
 
-	public static boolean set(int module, int unit, int array, int[] columns, int[] rows, String host) {
+	public boolean set(int module, int unit, int array, int[] columns, int[] rows) {
 
 		String path = "set/" + module + "/" + unit + "/" + array + "/" + intArray2String(columns) + "/"
 				+ intArray2String(rows);
@@ -214,7 +241,7 @@ public class KTRAMServerClient {
 		return response.readEntity(Boolean.class);
 	}
 
-	public static boolean clear(String host) {
+	public boolean clear() {
 
 		String path = "clear/";
 
@@ -224,7 +251,7 @@ public class KTRAMServerClient {
 		return response.readEntity(Boolean.class);
 	}
 
-	private static String intArray2String(int[] a) {
+	private String intArray2String(int[] a) {
 
 		StringBuilder b = new StringBuilder();
 		for (int i = 0; i < a.length; i++) {
@@ -237,7 +264,7 @@ public class KTRAMServerClient {
 
 	}
 
-	private static void throwServerError(Response response) {
+	private void throwServerError(Response response) {
 		if (response.getStatus() != Response.Status.OK.getStatusCode()) {
 			ErrorMessage errorMessage = response.readEntity(ErrorMessage.class);
 			WebApplicationException e = new WebApplicationException(errorMessage.getMessage());

@@ -33,18 +33,25 @@ public class DeviceThresholdMeasurmentExample extends HostInfo {
 	public static void main(String[] args) {
 
 		try {
-			KTRAMServerClient.initClientPool(1, username, password);
-			measureAdaptationThreshold(0, 0, 0, 1, 2);
-			KTRAMServerClient.shutdownClient();
+
+			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
+
+			measureAdaptationThreshold(client, 1, 0, 0, 0, 0);
+
+			client.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public static void measureAdaptationThreshold(int module, int unit, int array, int column, int row) {
-		float vPos = ArrayDoctor.measureForwardThreshold(module, unit, array, column, row, host, true);
-		float vNeg = ArrayDoctor.measureReverseThreshold(module, unit, array, column, row, host, true);
+	public static void measureAdaptationThreshold(KTRAMServerClient client, int module, int unit, int array, int column,
+			int row) {
+
+		ArrayDoctor doc = new ArrayDoctor(client, module, unit, array);
+
+		float vPos = doc.measureForwardThreshold(column, row, true);
+		float vNeg = doc.measureReverseThreshold(column, row, true);
 
 		System.out.println("Thresholds for device: " + module + ":" + unit + ":" + column + ":" + row);
 		System.out.println("   Forward = " + ArrayUtils.formatV(5, vPos));

@@ -16,21 +16,24 @@ public class ArrayHealthCheckExample extends HostInfo {
 	public static void main(String[] args) {
 
 		try {
-			KTRAMServerClient.initClientPool(1, username, password);
 
-			arrayHealthCheck(0, 0, 0);
+			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
 
-			KTRAMServerClient.shutdownClient();
+			arrayHealthCheck(client, 0, 0, 0);
+
+			client.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public static void arrayHealthCheck(int module, int unit, int array) {
+	public static void arrayHealthCheck(KTRAMServerClient client, int module, int unit, int array) {
 		long start = System.currentTimeMillis();
 
-		float[][][] r = ArrayDoctor.checkup(module, unit, array, host);
+		ArrayDoctor doc = new ArrayDoctor(client, module, unit, array);
+
+		float[][][] r = doc.checkup();
 
 		long end = System.currentTimeMillis();
 

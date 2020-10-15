@@ -8,13 +8,13 @@ public class GetProductInformationExample extends HostInfo {
 	public static void main(String[] args) {
 
 		try {
-			KTRAMServerClient.initClientPool(1, username, password);
+			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
 
-			getModuleInfo();
-			getDriverInfo();
-			getBoardInfo();
+			getModuleInfo(client);
+			getDriverInfo(client);
+			getBoardInfo(client);
 
-			KTRAMServerClient.shutdownClient();
+			client.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -25,10 +25,10 @@ public class GetProductInformationExample extends HostInfo {
 	 * Retrieves the product information for each module in array module ports 0
 	 * through 5.
 	 */
-	public static void getModuleInfo() {
+	public static void getModuleInfo(KTRAMServerClient client) {
 
 		for (int moduleId = 0; moduleId < 6; moduleId++) {
-			ProductInfo info = KTRAMServerClient.getModuleInfo(moduleId, host);
+			ProductInfo info = client.getModuleInfo(moduleId);
 			System.out.println("Module " + moduleId + ": " + (info == null ? "empty" : info));
 
 		}
@@ -38,18 +38,18 @@ public class GetProductInformationExample extends HostInfo {
 	/*
 	 * Retrieves the product information for the pulse driver and sense module
 	 */
-	public static void getDriverInfo() {
+	public static void getDriverInfo(KTRAMServerClient client) {
 
-		ProductInfo info = KTRAMServerClient.getDriverInfo(host);
+		ProductInfo info = client.getDriverInfo();
 		System.out.println(info);
 	}
 
 	/*
 	 * Retrieves the product information for main board.
 	 */
-	public static void getBoardInfo() {
+	public static void getBoardInfo(KTRAMServerClient client) {
 
-		ProductInfo info = KTRAMServerClient.getBoardInfo(host);
+		ProductInfo info = client.getBoardInfo();
 		System.out.println(info);
 	}
 

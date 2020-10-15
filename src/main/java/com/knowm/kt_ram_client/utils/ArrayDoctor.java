@@ -9,28 +9,39 @@ import com.knowm.kt_ram_client.business.ReadFormat;
 
 public class ArrayDoctor {
 
-	static float readAmplitude = .15f;
-	static float readWidth = 500;
-	static float readSeriesResistance = 50_000;
-	static float writeSeriesResistance = 20_000;
-	static float readSenseGain = 30;
+	private float readAmplitude = .15f;
+	private float readWidth = 500;
+	private float readSeriesResistance = 50_000;
+	private float writeSeriesResistance = 20_000;
+	private float readSenseGain = 40;
 
-	public static float measureForwardThreshold(int module, int unit, int array, int column, int row, String host,
-			boolean verbose) {
+	private KTRAMServerClient client;
+	private int module;
+	private int unit;
+	private int array;
+
+	public ArrayDoctor(KTRAMServerClient client, int module, int unit, int array) {
+		this.client = client;
+		this.module = module;
+		this.unit = unit;
+		this.array = array;
+	}
+
+	public float measureForwardThreshold(int column, int row, boolean verbose) {
 
 		// select the device
-		KTRAMServerClient.clear(host);
-		KTRAMServerClient.set(module, unit, array, column, row, host);
+		client.clear();
+		client.set(module, unit, array, column, row);
 
 		// erase the device
-		KTRAMServerClient.pulseWrite(-.75f, 500, writeSeriesResistance, 10, host);
+		client.pulseWrite(-.75f, 500, writeSeriesResistance, 10);
 
 		float[] amplitude = new float[50];
 		for (int i = 0; i < amplitude.length; i++) {
 			amplitude[i] = i * .01f + .1f;
 		}
 
-		float initialResistance = readAverage(10, host);
+		float initialResistance = readAverage(10);
 		if (verbose) {
 			System.out.println("Amplitude : Resistance : % Change");
 		}
@@ -40,10 +51,10 @@ public class ArrayDoctor {
 
 		for (int i = 0; i < amplitude.length; i++) {
 			// apply write pulses
-			KTRAMServerClient.pulseWrite(amplitude[i], 500, writeSeriesResistance, 10, host);
+			client.pulseWrite(amplitude[i], 500, writeSeriesResistance, 10);
 
 			// get resistance
-			r = readAverage(10, host);
+			r = readAverage(10);
 
 			// get change in resistance from initial
 			float p = 1 - r / initialResistance;
@@ -69,22 +80,21 @@ public class ArrayDoctor {
 
 	}
 
-	public static float measureReverseThreshold(int module, int unit, int array, int column, int row, String host,
-			boolean verbose) {
+	public float measureReverseThreshold(int column, int row, boolean verbose) {
 
 		// select the device
-		KTRAMServerClient.clear(host);
-		KTRAMServerClient.set(module, unit, array, column, row, host);
+		client.clear();
+		client.set(module, unit, array, column, row);
 
 		// write the device
-		KTRAMServerClient.pulseWrite(.75f, 500, writeSeriesResistance, 10, host);
+		client.pulseWrite(.75f, 500, writeSeriesResistance, 10);
 
 		float[] amplitude = new float[75];
 		for (int i = 0; i < amplitude.length; i++) {
 			amplitude[i] = -i * .01f;
 		}
 
-		float initialResistance = readAverage(10, host);
+		float initialResistance = readAverage(10);
 		if (verbose) {
 			System.out.println("Amplitude : Resistance : % Change");
 		}
@@ -94,10 +104,10 @@ public class ArrayDoctor {
 
 		for (int i = 0; i < amplitude.length; i++) {
 			// apply erase pulses
-			KTRAMServerClient.pulseWrite(amplitude[i], 500, writeSeriesResistance, 10, host);
+			client.pulseWrite(amplitude[i], 500, writeSeriesResistance, 10);
 
 			// get resistance
-			r = readAverage(10, host);
+			r = readAverage(10);
 
 			// get change in resistance from initial
 			float p = 1 - r / initialResistance;
@@ -124,37 +134,37 @@ public class ArrayDoctor {
 
 	}
 
-	private static float readAverage(int numToAverage, String host) {
-		float[] r = KTRAMServerClient.pulseRead(readAmplitude, readWidth, readSeriesResistance, readSenseGain, 10,
-				ReadFormat.RESISTANCE, host);
+	private float readAverage(int numToAverage) {
+		float[] r = client.pulseRead(readAmplitude, readWidth, readSeriesResistance, readSenseGain, numToAverage,
+				ReadFormat.RESISTANCE);
 		AveMaxMinVar stat = new AveMaxMinVar(r);
 		return stat.getAve();
 	}
 
-	public static float[][][] checkup(int module, int unit, int array, String host) {
+	public float[][][] checkup() {
 
 		System.out.println("ArrayDoctor.checkup: " + module + "m, " + unit + "u, " + array + "a");
 		// get the array size
-		ProductInfo productInfo = KTRAMServerClient.getModuleInfo(module, host);
+		ProductInfo productInfo = client.getModuleInfo(module);
 		System.out.println(productInfo);
 		int[] arraySize = ArrayUtils.getArraySizeFromProductInfo(productInfo);// [cols,rows]
 		List<Activation> activations = ArrayUtils.getActivationsForWholeArray(module, unit, array, productInfo);
 
 		// erase
-		KTRAMServerClient.pulseWriteActivations(-.75f, 500, writeSeriesResistance, 10, activations, false, host);
+		client.pulseWriteActivations(-.75f, 500, writeSeriesResistance, 10, activations, false);
 
 		// read HRS
-		List<float[]> reads_hrs = KTRAMServerClient.pulseReadActivations(readAmplitude, readWidth, readSeriesResistance,
-				readSenseGain, 1, ReadFormat.RESISTANCE, activations, false, host);
+		List<float[]> reads_hrs = client.pulseReadActivations(readAmplitude, readWidth, readSeriesResistance,
+				readSenseGain, 1, ReadFormat.RESISTANCE, activations, false);
 		float[][] hrs = new float[arraySize[0]][arraySize[1]];
 		ArrayUtils.fillArrayFromActivations(activations, reads_hrs, hrs);
 
 		// write
-		KTRAMServerClient.pulseWriteActivations(.75f, 500, writeSeriesResistance, 10, activations, false, host);
+		client.pulseWriteActivations(.75f, 500, writeSeriesResistance, 10, activations, false);
 
 		// read LRS
-		List<float[]> reads_lrs = KTRAMServerClient.pulseReadActivations(readAmplitude, readWidth, readSeriesResistance,
-				readSenseGain, 1, ReadFormat.RESISTANCE, activations, false, host);
+		List<float[]> reads_lrs = client.pulseReadActivations(readAmplitude, readWidth, readSeriesResistance,
+				readSenseGain, 1, ReadFormat.RESISTANCE, activations, false);
 		float[][] lrs = new float[arraySize[0]][arraySize[1]];
 		ArrayUtils.fillArrayFromActivations(activations, reads_lrs, lrs);
 
