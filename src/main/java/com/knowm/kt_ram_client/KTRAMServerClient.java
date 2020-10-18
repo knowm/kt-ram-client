@@ -225,6 +225,9 @@ public class KTRAMServerClient {
 		String path = "set/" + module + "/" + unit + "/" + array + "/" + column + "/" + row;
 
 		WebTarget webTarget = getClient().target(host).path(path);
+
+		System.out.println(webTarget);
+
 		Response response = webTarget.request().get();
 		throwServerError(response);
 		return response.readEntity(Boolean.class);
@@ -266,6 +269,9 @@ public class KTRAMServerClient {
 
 	private void throwServerError(Response response) {
 		if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+
+			System.out.println(response);
+
 			ErrorMessage errorMessage = response.readEntity(ErrorMessage.class);
 			WebApplicationException e = new WebApplicationException(errorMessage.getMessage());
 			throw e;

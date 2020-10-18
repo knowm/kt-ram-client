@@ -6,7 +6,9 @@
 
 ## Introduction
 
-The kT-RAM Raspberry Pi Server ("kTPiSever" or "kTPI" for brevity) is a server for memristor algorithm research and development. It was designed to be extensible and to support a rapid iterative design-test cycles. Through a "unit crossbar" approach, the kT-RAM Server is able to provide access to thousands of memristors, sufficient for the exploration and demonstration of small scale machine learning algorithms. The kTPiServer is not intended for application development, but rather as (1) a step toward fully integrated memristor-CMOS synaptic processors and (2) as a learning resource for professors and students in a post-COVID-19 society, where access to labs may be difficult. As a server, programs can be written and executed from any location with Internet access. In addition, the server can be administered remotely, allowing both student and teachers to design and test memristor algorithms from the comfort and safety of their own homes. Multipl kTPiServers are in use to support the knowm.ai memristor array web-service.  
+The kT-RAM Raspberry Pi Server ("kTPiSever" or "kTPI" for brevity) is a server for memristor algorithm research and development. It was designed to be extensible and to support a rapid iterative design-test cycles. Through a "unit crossbar" approach, the kT-RAM Server is able to provide access to thousands of memristors, sufficient for the exploration and demonstration of small scale machine learning algorithms. The kTPiServer is not intended for application development, but rather as a step toward fully integrated memristor-CMOS synaptic processors and as a prototyping and learning resource for professors and students in a post-COVID-19 society, where access to labs may be difficult. As a server, memristor algorithms can be written and executed from any location with Internet access. The server can be administered remotely as well, allowing both student and teachers to design and test memristor algorithms from the comfort and safety of their own homes. 
+
+Multiple kTPiServers are now use to support the knowm.ai memristor array web-service, which provides access to memristor arrays of various sizes and memristors types.  
 
 ## System Architecture Overview
 
@@ -17,7 +19,7 @@ The kTPiServer consists of four main components:
 1. One or more memristor `Array Module`.
 1. One `Calibration Module`.
 
-At least one of each component is needed to operate the sever. The calibration array module can only be inserted in the module "6" slot. While the calibration module is needed for initial calibration to create one or more "calibration profiles", it may then be removed and replaced with a memristor array module. Once calibrated, the kTPiServer enables users to select one or more memristors from one or more arrays and drive them with pulses of various amplitudes, widths and polarity. All driver and sensing function is encapsulated in the `Driver Module`, which means that the exact specification for driving and sensing is dependent on module version that is installed. As multiple versions are planned and in development, please refer to the documentation of the specific driver module. 
+At least one of each component is needed to operate the sever. The calibration module can only be inserted in the "module 6" slot while the driver can only be inserted into the driver slot. While the calibration module is initially needed for initial calibration to create "calibration profiles", it may then be removed and replaced with a memristor array module. Once calibrated, the kTPiServer enables users to select one or more memristors from one or more arrays and drive them with pulses of various amplitudes, widths and polarity. All driver and sensing function is encapsulated in the `Driver Module`, which means that the exact specification for driving and sensing is dependent on module version that is installed. As multiple versions are planned and in development, please refer to the documentation of the specific module. 
 
 The architecture follows the "unit crossbar" concept, which is elaborated on in [Alex's blog article here](https://knowm.org/memristor-crossbars-as-easy-as-raspberry-pi/).
 
@@ -27,17 +29,23 @@ A unit crossbar, or more generally a "unit array", is a memristor array that exp
 
 ![kTPiServer Unitary ("Half-Core") Architecture](img/ktPiArchitecture.png)
 
-There are two major planned versions of drivers. The first generation (V1.x) is unitary access while the second generation (V2.x) enables both unitary and differential access. In both versions there are essentially only three main operations:
+There are two major planned versions of drivers. The first generation (V1.x) is unitary access while the second generation (V2.x) enables both unitary and differential access. In both versions there are essentially three main operations:
 
-1. One or more unit crossbars are selected, coupling the desired memristor to the drive terminals.
-1. A "write" pulse is generated, potentially causing modification of the selected memristors.
-1. A "read" pulse is generated, causuing the sense circuitry to sense the voltage across the programmable series resistor and, via prior calibration, return the resistance, conductance, current, or sense voltage. 
+1. One or more devices across one or more unit crossbars are selected, coupling the memristor(s) to the drive terminals.
+1. A "write" or "erase" pulse is generated, potentially causing modification of the selected memristors.
+1. A "read" pulse is generated and the sense circuitry is used to measure the voltage across the programmable series resistor and, via prior calibration, return the resistance, conductance, current, or sense voltage. 
 
-Through selective coupling and driving of memristors in this fashion, it is possible to implement memory, logic and machine learning functions.  
+Through selective coupling and driving of memristors in this fashion, it is possible to implement memory, logic and machine learning functions. 
+
+
+## Device Isolation
+
+Each array is strongly isolated from other arrays via the analog switches. However, arrays to not contain selector devices nor are the non-selected rows or columns electrically driven. This leads to sneak-paths within the arrays. Provided the arrays are small (they are) and provided you use lower voltages such that non-selected devices see voltages under their thresholds, it is possible to read, write and erase a device on an array without altering other devices. As a general rule, a non-selected device on the same row or column as a selected device will see half the voltage that is applied to the selected device. For a forward threshold of .2V, for example, write voltages of .4V or less will greatly reduce the odds of inadvertently altering the resistance of non-selected devices.  
+
 
 ## Java Client
 
-The kTPIServer is a web-application, which means that it can serve any client operating in any programming language. Queries are returned in industry standard JSON format. To facilitate development, a Java Web Client has been written for users and administrators. If you are partial to Python or other programming languages, it should be a simple matter to use the reference Java client and roll your own. 
+The kTPIServer is a web-application, which means that it can serve any client operating in any programming language over the HTTP protocol. Queries are returned in industry standard JSON format. To facilitate development, a Java Web Client has been written for both users and administrators. If you prefer Python or another other programming languages, it should be a simple matter to use the reference Java client and [end point documentation](EndPoints.md) to program your own client. 
 
 
 ## Calibration Profiles
@@ -82,19 +90,21 @@ Unit crossbars are accessed by specifying the following:
 |Column|The column of the specified array|0 through 32, depending on array variant|
 |Row|The row of the specified array|0 through 32, depending on array variant|
 
-Arrays are address in a relative way, where the column and row is relative to the specific array and not the chip bonding pads. This is seen more clearly below:
+Arrays are addressed in a relative way, where the column and row is relative to the specific array and not the chip bonding pads. This is seen more clearly below:
 
 ![32x32 crossbar varient array indicies](img/arrayIndices.png)
  
-Columns are chosen to be the top electrodes while rows are chosen to be the bottom electrodes. A positive voltage applied across the selected column/row's, where the column is the higher potential, will drive the memristor to a higher conductance. 
+Array ID's are shown in black. Columns are magenta and rows are blue. Columns are chosen to be the top electrodes while rows are chosen to be the bottom electrodes. Device polarity is such that the device cathode is connected to the row.  A positive voltage applied across the selected column/row's, where the column is the higher potential, will drive the memristor to a higher conductance. 
 
-The kTPiServer accepts numerous alternate array modules, so the above is for general reference but may not be applicable to your particular setup. Please refer to the specifications of the specific array module for accerate addresing information.
+The kTPiServer accepts numerous alternate array modules, so the above is for general reference but may not be applicable to your particular setup. Please refer to the specifications of the specific array module for accurate addressing information.
 
 
 ## User Accounts, Array Permissions and Usage Limits
 
 
-System administrators are responsible for creating user accounts and allocating user access to specific arrays across the kTPIServer. Before you can perform operations on a device within an array, you must be given access by your system administrator. Every access to the web API must include your login and password credentials, which will be provided by your system administrator. Be sure to use HTTPS for all interactions so that your credentials are encrypted.
+The system administrator is responsible for creating user accounts and allocating user access to specific arrays across the kTPIServer. Before you can perform operations on a device within an array, you must be given access by your system administrator. Every access to the web API must include your login and password credentials, which will be provided by your system administrator. 
+
+**Be sure to use HTTPS/SSL for all interactions so that your credentials are encrypted!**
 
 In addition to array permission, each array is protected with usage limits that prevent unintended exposure to potentially damaging or structurally deforming high currents. It is up to the system administrator to set these values, and if they do not then the system default values will be used. Note that the system administrator may change the default values. 
 
@@ -103,16 +113,9 @@ In addition to array permission, each array is protected with usage limits that 
 |:--------:|:-----------:|:-------------------:|
 |positive voltage|positive polarity pulse amplitude.| .75V|
 |negative voltage|negative polarity pulse amplitude.| -1.0V|
-|series resistance|programmable circuit series resistance.| 15kΩ|
+|series resistance|programmable circuit series resistance.| 20kΩ|
 
 
-Both user array access permission and usage limits are associated with the specific array module, which identifies itself to the kTPIServer. If an array module is moved to another port on the main board, the permissions and usage limits will follow the module to the new port *but you will have to use a new port ID to access it*. For example, lets say that you are granted access to an array on module id (port) 3. At a later time, this module is removed from the board and inserted into port 2 and the system rebooted. You will now have the same permissions to the module, but they will be access by specification of module ID 2 instead of 3. 
-
-
-# HTTP & Java Client
-
-
-The kTPiServer handles HTTPS requests and returns JSON data. The intended use is via an HTTP Client in the users preferred programming language. Due to the fact that Alex's primary language is Java, this HTTP Java Client has been provided to simplify the interaction with the server http end-points.  Please refer to the [EndPoints.md](documentation/EndPoints.md) file for a description of the available endpoints.  
-
+Both user array access permission and usage limits are associated with the specific array module, which identifies itself to the kTPIServer with a serial number. If an array module is moved to another port on the main board, the permissions and usage limits will follow the module to the new port *but you will have to use a new port ID to access it*. For example, lets say that you are granted access to an array on module id (port) 3. At a later time, this module is removed from the board and inserted into port 2 and the system rebooted. You will now have the same permissions to the module, but they will be accessed by specification of module ID 2 instead of 3. 
 
 

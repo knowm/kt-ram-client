@@ -16,6 +16,6 @@ in private beta at the moment.
 Please see [Introduction.md](documentation/Introduction.md) for a general overview. Code examples can be found
 in the `com.knowm.kt_ram_client.examples` package. 
 
-# End Points
+# HTTP End Points
 
-While this client is Java-based, all interaction with the web-service occurs via standard HTTP GET and POST requests with industry-standard JSON data returned. An overview of the endpoints is available in the [EndPoints.md](documentation/EndPoints.md) file
+While this client is Java-based, all interaction with the web-service occurs via standard HTTP GET and POST requests with industry-standard JSON data returned. An overview of the end points is available in the [EndPoints.md](documentation/EndPoints.md) file.
