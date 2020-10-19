@@ -12,8 +12,13 @@ public class ArrayDoctor {
 	private float readAmplitude = .15f;
 	private float readWidth = 500;
 	private float readSeriesResistance = 50_000;
-	private float writeSeriesResistance = 20_000;
+	private float writeSeriesResistance = 30_000;
 	private float readSenseGain = 40;
+
+	private float resetVoltage = -1.5f;
+	private float formingVoltage = .5f;
+	private float formingSeriesResistance = 20_000;
+	private float resetSeriesResistance = 10_000;
 
 	private KTRAMServerClient client;
 	private int module;
@@ -27,6 +32,74 @@ public class ArrayDoctor {
 		this.array = array;
 	}
 
+	public void form(int column, int row, boolean verbose) {
+		client.clear();
+		client.set(module, unit, array, column, row);
+
+		for (int i = 0; i < 10; i++) {
+			client.pulseWrite(formingVoltage, 500, formingSeriesResistance, 5);
+			client.pulseWrite(resetVoltage, 500, resetSeriesResistance, 5);
+		}
+
+		if (verbose) {
+			System.out.println("Device has been formed at " + ArrayUtils.formatV(5, formingVoltage) + " / "
+					+ ArrayUtils.formatV(5, resetVoltage));
+		}
+
+	}
+
+	public float hardReset(int column, int row, boolean verbose) {
+
+		client.clear();
+		client.set(module, unit, array, column, row);
+		client.pulseWrite(resetVoltage, 500, resetSeriesResistance, 10);
+
+		float r = client.pulseRead(readAmplitude, readWidth, readSeriesResistance, readSenseGain, 1,
+				ReadFormat.RESISTANCE)[0];
+
+		if (verbose) {
+			System.out.println("Resistance after hard reset: " + ArrayUtils.formatR(5, r));
+		}
+
+		return r;
+
+	}
+
+	public float[] measureLrsHrs(float writeAmplitude, float writeSeriesResistance, float eraseAmplitude,
+			float eraseSeriesResistance, int column, int row, boolean verbose) {
+
+		// select the device
+		client.clear();
+		client.set(module, unit, array, column, row);
+		client.pulseWrite(writeAmplitude, 500, writeSeriesResistance, 50);
+
+		float[] lrs_hrs = new float[2];
+
+		// perform multiple reads and average the results
+		float[] reads = client.pulseRead(.15f, 500, 50_000, 50, 5, ReadFormat.RESISTANCE);
+		AveMaxMinVar stat = new AveMaxMinVar(reads);
+
+		lrs_hrs[0] = stat.getAve();
+
+		if (verbose) {
+			System.out.println("LRS (50@" + ArrayUtils.formatV(5, writeAmplitude) + "): "
+					+ ArrayUtils.formatR(5, stat.getAve()) + " ± " + ArrayUtils.formatR(5, stat.getStd()));
+		}
+
+		client.pulseWrite(eraseAmplitude, 500, eraseSeriesResistance, 50);
+
+		reads = client.pulseRead(.15f, 500, 50_000, 50, 5, ReadFormat.RESISTANCE);
+		stat = new AveMaxMinVar(reads);
+
+		System.out.println("HRS(50@" + ArrayUtils.formatV(5, eraseAmplitude) + "): "
+				+ ArrayUtils.formatR(5, stat.getAve()) + " ± " + ArrayUtils.formatR(5, stat.getStd()));
+
+		lrs_hrs[1] = stat.getAve();
+
+		return lrs_hrs;
+
+	}
+
 	public float measureForwardThreshold(int column, int row, boolean verbose) {
 
 		// select the device
@@ -34,7 +107,7 @@ public class ArrayDoctor {
 		client.set(module, unit, array, column, row);
 
 		// erase the device
-		client.pulseWrite(-.75f, 500, writeSeriesResistance, 10);
+		client.pulseWrite(-1f, 500, writeSeriesResistance, 10);
 
 		float[] amplitude = new float[50];
 		for (int i = 0; i < amplitude.length; i++) {
@@ -87,7 +160,7 @@ public class ArrayDoctor {
 		client.set(module, unit, array, column, row);
 
 		// write the device
-		client.pulseWrite(.75f, 500, writeSeriesResistance, 10);
+		client.pulseWrite(.5f, 500, writeSeriesResistance, 10);
 
 		float[] amplitude = new float[75];
 		for (int i = 0; i < amplitude.length; i++) {

@@ -36,7 +36,7 @@ public class DeviceThresholdMeasurmentExample extends HostInfo {
 
 			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
 
-			measureAdaptationThreshold(client, 1, 0, 0, 0, 0);
+			measureAdaptationThreshold(client, 0, 0, 0, 4, 4);
 
 			client.shutdown();
 		} catch (Exception e) {

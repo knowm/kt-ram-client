@@ -226,7 +226,7 @@ public class KTRAMServerClient {
 
 		WebTarget webTarget = getClient().target(host).path(path);
 
-		System.out.println(webTarget);
+		// System.out.println(webTarget);
 
 		Response response = webTarget.request().get();
 		throwServerError(response);

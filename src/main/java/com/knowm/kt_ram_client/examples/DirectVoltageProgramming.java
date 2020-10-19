@@ -12,7 +12,10 @@ import com.knowm.kt_ram_client.utils.ArrayUtils;
 import com.knowm.kt_ram_client.utils.AveMaxMinVar;
 
 /*
- * Uses the series resistor to program the resistance of a memristor.
+ * Uses the series resistor and an applied forward voltage to program the device. As the resistance of the 
+ * device drops, so does the voltage drop across it (due to the series resistor circuit). This will continue
+ * until the device reached its threshold. The lower the voltage, the higher the resistance. Due to the stochastic 
+ * nature of resistance changes, this is a noisy method. 
  */
 public class DirectVoltageProgramming extends HostInfo {
 
@@ -21,7 +24,7 @@ public class DirectVoltageProgramming extends HostInfo {
 		try {
 			KTRAMServerClient client = new KTRAMServerClient(host, username, password);
 
-			getCurve(client, 0, 0, 0, 3, 7);
+			getCurve(client, 0, 0, 0, 4, 0);
 
 			client.shutdown();
 		} catch (Exception e) {
@@ -36,7 +39,7 @@ public class DirectVoltageProgramming extends HostInfo {
 		client.clear();
 		client.set(module, unit, array, column, row);
 
-		double[] programmingVoltages = new double[50];//
+		double[] programmingVoltages = new double[30];//
 		for (int i = 0; i < programmingVoltages.length; i++) {
 			programmingVoltages[i] = .2 + .01 * i;
 		}
