@@ -88,7 +88,7 @@ public class PulseProgramming extends HostInfo {
 			 * will affect other devices on the array.
 			 */
 			// doc.hardReset(column, row, true);
-			// doc.softReset(column, row, true);
+			doc.softReset(column, row, true);
 			/*
 			 * 
 			 * @formatter:off
@@ -122,7 +122,7 @@ public class PulseProgramming extends HostInfo {
 			 * given a target and tolerance.
 			 */
 
-			// programTheThing(client);
+			programTheThing(client);
 
 			client.shutdown();
 		} catch (Exception e) {
