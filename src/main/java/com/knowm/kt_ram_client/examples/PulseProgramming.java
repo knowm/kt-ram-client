@@ -17,14 +17,14 @@ import com.knowm.kt_ram_client.utils.AveMaxMinVar;
 
 public class PulseProgramming extends HostInfo {
 
-	// the device address-->
+	// the device address (you must have permission for the array)-->
 	static int module = 0;
 	static int unit = 0;
 	static int array = 0;
-	static int column = 6;
-	static int row = 3;
+	static int column = 1;
+	static int row = 2;
 
-	static float writeSeriesResistance = 50_000;
+	static float writeSeriesResistance = 10_000;
 	static float eraseSeriesResistance = 10_000;
 
 	// this many total steps to record before terminating
@@ -34,11 +34,11 @@ public class PulseProgramming extends HostInfo {
 	static int numReadAve = 5;
 
 	// the write and erase voltages to use for programming
-	static float writeAmplitude = .35f;
-	static float eraseAmplitude = -.135f;
+	static float writeAmplitude = .3f;
+	static float eraseAmplitude = -.15f;
 
 	// the resistance you want to program device to
-	static float targetResistance = 420_000;// ohms
+	static float targetResistance = 600_000;// ohms
 
 	// the tolerance for programming. Programming will stop when device is measured
 	// to be within this many ohm of target.
@@ -46,7 +46,7 @@ public class PulseProgramming extends HostInfo {
 
 	// if you run lrsHrs() these value will be set. You should run it at least once
 	// to get an idea of the LRS/HRS range.
-	static float[] lrs_hrs = new float[] { 400_000, 800_000 };
+	static float[] lrs_hrs = null;// new float[] { 400_000, 800_000 };
 
 	public static void main(String[] args) {
 
@@ -88,7 +88,7 @@ public class PulseProgramming extends HostInfo {
 			 * will affect other devices on the array.
 			 */
 			// doc.hardReset(column, row, true);
-
+			// doc.softReset(column, row, true);
 			/*
 			 * 
 			 * @formatter:off
@@ -114,15 +114,15 @@ public class PulseProgramming extends HostInfo {
 			 * @formatter:on
 			 */
 
-//			lrs_hrs = doc.measureLrsHrs(writeAmplitude, writeSeriesResistance, eraseAmplitude, eraseSeriesResistance,
-//					column, row, true);
+			lrs_hrs = doc.measureLrsHrs(writeAmplitude, writeSeriesResistance, eraseAmplitude, eraseSeriesResistance,
+					column, row, true);
 
 			/*
 			 * One (of many possible) routine for programming the resistance of a memristor
 			 * given a target and tolerance.
 			 */
 
-			programTheThing(client);
+			// programTheThing(client);
 
 			client.shutdown();
 		} catch (Exception e) {
@@ -148,10 +148,13 @@ public class PulseProgramming extends HostInfo {
 		float e_comp = 1000;
 		float w_comp = 1000;
 
+		int eNum = 1;
+		int wNum = 1;
+
 		for (int i = 1; i < timeSteps; i++) {
 
 			// perform multiple reads and average the results
-			float[] reads = client.pulseRead(.2f, 500, 50_000, 50, numReadAve, ReadFormat.RESISTANCE);
+			float[] reads = client.pulseRead(.15f, 500, 40_000, 40, numReadAve, ReadFormat.RESISTANCE);
 			AveMaxMinVar stat = new AveMaxMinVar(reads);
 
 			resistanceHistory.add((double) stat.getAve());
@@ -172,20 +175,32 @@ public class PulseProgramming extends HostInfo {
 				float width = ((Math.abs(dif) + w_comp) / (float) 5000.0);
 				width = width > 500 ? 500 : width;
 				width = width < 2.5f ? 2.5f : width;
-				System.out.println("     write pulse width = " + width);
-				client.pulseWrite(writeAmplitude, width, writeSeriesResistance, 1);
+
+				if (width == 500 && wNum <= 10) {
+					wNum++;
+				}
+
+				System.out.println(ArrayUtils.formatPulses(10, wNum, writeAmplitude, width));
+
+				client.pulseWrite(writeAmplitude, width, writeSeriesResistance, wNum);
 				w_comp *= 2;
 				e_comp = 1000;
+				eNum = 1;
 			} else {
 				float width = ((Math.abs(dif) + e_comp) / (float) 5000.0);
 
 				width = width > 500 ? 500 : width;
 				width = width < 2.5f ? 2.5f : width;
-				System.out.println("     erase pulse width = " + width);
-				client.pulseWrite(eraseAmplitude, width, eraseSeriesResistance, 1);
+
+				if (width == 500 && eNum <= 10) {
+					eNum++;
+				}
+
+				System.out.println(ArrayUtils.formatPulses(10, eNum, eraseAmplitude, width));
+				client.pulseWrite(eraseAmplitude, width, eraseSeriesResistance, eNum);
 				w_comp = 1000;
 				e_comp *= 2;
-
+				wNum = 1;
 			}
 
 		}
@@ -212,12 +227,24 @@ public class PulseProgramming extends HostInfo {
 			XYSeries HRSSeries = chart.addSeries("HRS(" + ArrayUtils.formatV(5, eraseAmplitude) + ")",
 					new double[] { 0, resistanceHistory.size() - 1 }, new double[] { lrs_hrs[1], lrs_hrs[1] });
 			HRSSeries.setMarker(SeriesMarkers.NONE);
+
+			AveMaxMinVar stat = new AveMaxMinVar(resistanceHistory);
+
+			if (stat.getMin() < lrs_hrs[0]) {
+				chart.getStyler().setYAxisMin(stat.getMin() - 10_000.0);
+			} else {
+				chart.getStyler().setYAxisMin((double) lrs_hrs[0] - 10_000);
+			}
+
+			if (stat.getMax() > lrs_hrs[1]) {
+				chart.getStyler().setYAxisMax(stat.getMax() + 10_000.0);
+			} else {
+				chart.getStyler().setYAxisMax((double) lrs_hrs[1] + 10_000.0);
+			}
+
 		} else {
 			System.out.println("Dont forget to check the LRS and HRS!");
 		}
-
-		chart.getStyler().setYAxisMin((double) 100_000);
-		chart.getStyler().setYAxisMax((double) 1_000_000);
 
 		new SwingWrapper(chart).displayChart();
 

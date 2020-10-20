@@ -15,10 +15,13 @@ public class ArrayDoctor {
 	private float writeSeriesResistance = 30_000;
 	private float readSenseGain = 40;
 
-	private float resetVoltage = -1.5f;
-	private float formingVoltage = .5f;
-	private float formingSeriesResistance = 20_000;
+	private float softResetVoltage = -.75f;
+	private float hardResetVoltage = -1.5f;
 	private float resetSeriesResistance = 10_000;
+
+	private float formingVoltagePositive = .5f;
+	private float formingVoltageNegative = -1.25f;
+	private float formingSeriesResistance = 20_000;
 
 	private KTRAMServerClient client;
 	private int module;
@@ -37,13 +40,13 @@ public class ArrayDoctor {
 		client.set(module, unit, array, column, row);
 
 		for (int i = 0; i < 10; i++) {
-			client.pulseWrite(formingVoltage, 500, formingSeriesResistance, 5);
-			client.pulseWrite(resetVoltage, 500, resetSeriesResistance, 5);
+			client.pulseWrite(formingVoltagePositive, 500, formingSeriesResistance, 5);
+			client.pulseWrite(formingVoltageNegative, 500, resetSeriesResistance, 5);
 		}
 
 		if (verbose) {
-			System.out.println("Device has been formed at " + ArrayUtils.formatV(5, formingVoltage) + " / "
-					+ ArrayUtils.formatV(5, resetVoltage));
+			System.out.println("Device has been formed at " + ArrayUtils.formatV(5, formingVoltagePositive) + " / "
+					+ ArrayUtils.formatV(5, formingVoltageNegative));
 		}
 
 	}
@@ -52,7 +55,7 @@ public class ArrayDoctor {
 
 		client.clear();
 		client.set(module, unit, array, column, row);
-		client.pulseWrite(resetVoltage, 500, resetSeriesResistance, 10);
+		client.pulseWrite(hardResetVoltage, 500, resetSeriesResistance, 10);
 
 		float r = client.pulseRead(readAmplitude, readWidth, readSeriesResistance, readSenseGain, 1,
 				ReadFormat.RESISTANCE)[0];
@@ -65,13 +68,30 @@ public class ArrayDoctor {
 
 	}
 
+	public float softReset(int column, int row, boolean verbose) {
+
+		client.clear();
+		client.set(module, unit, array, column, row);
+		client.pulseWrite(softResetVoltage, 500, resetSeriesResistance, 10);
+
+		float r = client.pulseRead(readAmplitude, readWidth, readSeriesResistance, readSenseGain, 1,
+				ReadFormat.RESISTANCE)[0];
+
+		if (verbose) {
+			System.out.println("Resistance after soft reset: " + ArrayUtils.formatR(5, r));
+		}
+
+		return r;
+
+	}
+
 	public float[] measureLrsHrs(float writeAmplitude, float writeSeriesResistance, float eraseAmplitude,
 			float eraseSeriesResistance, int column, int row, boolean verbose) {
 
 		// select the device
 		client.clear();
 		client.set(module, unit, array, column, row);
-		client.pulseWrite(writeAmplitude, 500, writeSeriesResistance, 50);
+		client.pulseWrite(writeAmplitude, 500, writeSeriesResistance, 100);
 
 		float[] lrs_hrs = new float[2];
 
@@ -86,7 +106,7 @@ public class ArrayDoctor {
 					+ ArrayUtils.formatR(5, stat.getAve()) + " ± " + ArrayUtils.formatR(5, stat.getStd()));
 		}
 
-		client.pulseWrite(eraseAmplitude, 500, eraseSeriesResistance, 50);
+		client.pulseWrite(eraseAmplitude, 500, eraseSeriesResistance, 100);
 
 		reads = client.pulseRead(.15f, 500, 50_000, 50, 5, ReadFormat.RESISTANCE);
 		stat = new AveMaxMinVar(reads);

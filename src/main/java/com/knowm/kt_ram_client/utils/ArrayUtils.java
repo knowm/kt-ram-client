@@ -14,6 +14,7 @@ public class ArrayUtils {
 	private static DecimalFormat fm_mVolts = new DecimalFormat("### mV");
 	private static DecimalFormat fm_Volts = new DecimalFormat("#.## V");
 	private static DecimalFormat fm_Percent = new DecimalFormat("#.# %");
+	private static DecimalFormat fm_width = new DecimalFormat("###.# μS");
 
 	public static void fillArrayFromActivations(List<Activation> activations, List<float[]> reads, float[][] array) {
 		if (activations.size() != reads.size()) {
@@ -115,6 +116,12 @@ public class ArrayUtils {
 	public static String formatP(int padding, float percent) {
 
 		String s = fm_Percent.format(percent);
+		return String.format("%" + padding + "s", s);
+	}
+
+	public static String formatPulses(int padding, int numPulses, float amplitude, float width) {
+
+		String s = numPulses + "@(" + fm_Volts.format(amplitude) + "," + fm_width.format(width) + ")";
 		return String.format("%" + padding + "s", s);
 	}
 
