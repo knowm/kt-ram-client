@@ -9,12 +9,13 @@ import com.knowm.kt_ram_client.business.ProductInfo;
 
 public class ArrayUtils {
 
-	private static DecimalFormat fm_kOhms = new DecimalFormat("##.# kΩ");
-	private static DecimalFormat fm_MOhms = new DecimalFormat("#.## MΩ");
-	private static DecimalFormat fm_mVolts = new DecimalFormat("### mV");
-	private static DecimalFormat fm_Volts = new DecimalFormat("#.## V");
-	private static DecimalFormat fm_Percent = new DecimalFormat("#.# %");
-	private static DecimalFormat fm_width = new DecimalFormat("###.# μS");
+	private static DecimalFormat fm_kOhms = new DecimalFormat("##.#kΩ");
+	private static DecimalFormat fm_MOhms = new DecimalFormat("#.##MΩ");
+	private static DecimalFormat fm_mVolts = new DecimalFormat("###mV");
+	private static DecimalFormat fm_Volts = new DecimalFormat("#.##V");
+	private static DecimalFormat fm_Percent = new DecimalFormat("#.#%");
+	private static DecimalFormat fm_width = new DecimalFormat("###.#μS");
+	private static DecimalFormat fm_seconds = new DecimalFormat("###.##s");
 
 	public static void fillArrayFromActivations(List<Activation> activations, List<float[]> reads, float[][] array) {
 		if (activations.size() != reads.size()) {
@@ -119,9 +120,16 @@ public class ArrayUtils {
 		return String.format("%" + padding + "s", s);
 	}
 
+	public static String formatSec(int padding, float seconds) {
+
+		String s = fm_seconds.format(seconds);
+		return String.format("%" + padding + "s", s);
+	}
+
 	public static String formatPulses(int padding, int numPulses, float amplitude, float width) {
 
-		String s = numPulses + "@(" + fm_Volts.format(amplitude) + "," + fm_width.format(width) + ")";
+		String s = "PULSE " + numPulses + "@(" + fm_mVolts.format(amplitude / .001) + " x " + fm_width.format(width)
+				+ ")";
 		return String.format("%" + padding + "s", s);
 	}
 

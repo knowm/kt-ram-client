@@ -220,6 +220,20 @@ public class KTRAMServerClient {
 		}
 	}
 
+	public boolean set(Activation activation) {
+
+		String path = "set/" + activation.module + "/" + activation.unit + "/" + activation.array + "/"
+				+ activation.column + "/" + activation.row;
+
+		WebTarget webTarget = getClient().target(host).path(path);
+
+		// System.out.println(webTarget);
+
+		Response response = webTarget.request().get();
+		throwServerError(response);
+		return response.readEntity(Boolean.class);
+	}
+
 	public boolean set(int module, int unit, int array, int column, int row) {
 
 		String path = "set/" + module + "/" + unit + "/" + array + "/" + column + "/" + row;
@@ -233,16 +247,16 @@ public class KTRAMServerClient {
 		return response.readEntity(Boolean.class);
 	}
 
-	public boolean set(int module, int unit, int array, int[] columns, int[] rows) {
-
-		String path = "set/" + module + "/" + unit + "/" + array + "/" + intArray2String(columns) + "/"
-				+ intArray2String(rows);
-
-		WebTarget webTarget = getClient().target(host).path(path);
-		Response response = webTarget.request().get();
-		throwServerError(response);
-		return response.readEntity(Boolean.class);
-	}
+//	public boolean set(int module, int unit, int array, int[] columns, int[] rows) {
+//
+//		String path = "set/" + module + "/" + unit + "/" + array + "/" + intArray2String(columns) + "/"
+//				+ intArray2String(rows);
+//
+//		WebTarget webTarget = getClient().target(host).path(path);
+//		Response response = webTarget.request().get();
+//		throwServerError(response);
+//		return response.readEntity(Boolean.class);
+//	}
 
 	public boolean clear() {
 
@@ -254,18 +268,18 @@ public class KTRAMServerClient {
 		return response.readEntity(Boolean.class);
 	}
 
-	private String intArray2String(int[] a) {
-
-		StringBuilder b = new StringBuilder();
-		for (int i = 0; i < a.length; i++) {
-			b.append(a[i]);
-			if (i < a.length - 1) {
-				b.append(",");
-			}
-		}
-		return b.toString();
-
-	}
+//	private String intArray2String(int[] a) {
+//
+//		StringBuilder b = new StringBuilder();
+//		for (int i = 0; i < a.length; i++) {
+//			b.append(a[i]);
+//			if (i < a.length - 1) {
+//				b.append(",");
+//			}
+//		}
+//		return b.toString();
+//
+//	}
 
 	private void throwServerError(Response response) {
 		if (response.getStatus() != Response.Status.OK.getStatusCode()) {

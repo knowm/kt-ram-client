@@ -15,8 +15,9 @@ public class ArrayDoctor {
 	private float writeSeriesResistance = 30_000;
 	private float readSenseGain = 40;
 
-	private float softResetVoltage = -.75f;
-	private float hardResetVoltage = -1.5f;
+	private float softResetVoltage = -.125f;
+	private float hardResetVoltage = -1.25f;
+
 	private float resetSeriesResistance = 10_000;
 
 	private float formingVoltagePositive = .5f;
@@ -72,7 +73,7 @@ public class ArrayDoctor {
 
 		client.clear();
 		client.set(module, unit, array, column, row);
-		client.pulseWrite(softResetVoltage, 500, resetSeriesResistance, 10);
+		client.pulseWrite(softResetVoltage, 500, resetSeriesResistance, 50);
 
 		float r = client.pulseRead(readAmplitude, readWidth, readSeriesResistance, readSenseGain, 1,
 				ReadFormat.RESISTANCE)[0];
